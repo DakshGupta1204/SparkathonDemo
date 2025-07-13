@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, CreditCard, Check, Users, Receipt, Zap, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,9 +39,22 @@ const Payment = () => {
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
   const [cardName, setCardName] = useState('');
+  const [paidMembers, setPaidMembers] = useState<string[]>([]);
 
   const coCartCode = localStorage.getItem('coCartCode') || '';
   const coCartName = localStorage.getItem('coCartName') || 'Shared Cart';
+
+  // Randomly select 2 members (excluding 'You') to show as already paid
+  const getRandomPaidMembers = () => {
+    const otherMembers = teamMembers.filter(member => member.name !== 'You').map(m => m.name);
+    const shuffled = otherMembers.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 2);
+  };
+
+  // Initialize paid members on component mount
+  useEffect(() => {
+    setPaidMembers(getRandomPaidMembers());
+  }, []);
 
   // Mock data - in a real app, this would come from the previous page or API
   const [teamMembers] = useState<TeamMember[]>([
@@ -169,6 +182,17 @@ const Payment = () => {
     return paymentMethod === 'splitwise' ? calculateSplitCosts() : calculateMemberCosts();
   };
 
+  const getMyShare = () => {
+    const costs = getDisplayCosts();
+    return costs['You'] || 0;
+  };
+
+  const getMyTotalWithTax = () => {
+    const myShare = getMyShare();
+    const myTax = myShare * 0.08; // 8% tax on my share
+    return myShare + myTax;
+  };
+
   const subtotal = calculateSubtotal();
   const tax = subtotal * 0.08; // 8% tax
   const originalDeliveryFee = 5.99;
@@ -255,21 +279,24 @@ const Payment = () => {
                 <CardHeader>
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Order Total:</span>
-                      <span className="font-semibold">${total.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-green-600">
-                      <span>CoCart Delivery Savings:</span>
-                      <span className="font-semibold">-${originalDeliveryFee}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Payment Method:</span>
-                      <span className="capitalize">{paymentMethod}</span>
-                    </div>
-                  </div>
+                <CardContent>                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span>Order Total:</span>
+                              <span className="font-semibold">${total.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>My Share Paid:</span>
+                              <span className="font-semibold">${getMyTotalWithTax().toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-green-600">
+                              <span>CoCart Delivery Savings:</span>
+                              <span className="font-semibold">-${(originalDeliveryFee / teamMembers.length).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Payment Method:</span>
+                              <span className="capitalize">{paymentMethod}</span>
+                            </div>
+                          </div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -449,39 +476,79 @@ const Payment = () => {
                     <AnimatePresence>
                       {teamMembers.map((member, index) => {
                         const memberCost = getDisplayCosts()[member.name] || 0;
+                        const isPaid = paidMembers.includes(member.name);
                         return (
                           <motion.div 
                             key={member.id}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.1 }}
-                            whileHover={{ scale: 1.01, backgroundColor: "#f8fafc" }}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg transition-colors"
+                            whileHover={{ scale: 1.01, backgroundColor: isPaid ? "#dcfce7" : "#f8fafc" }}
+                            className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
+                              isPaid 
+                                ? 'bg-green-50 border-2 border-green-200' 
+                                : 'bg-gray-50'
+                            }`}
                           >
                             <div className="flex items-center space-x-3">
                               <motion.div 
                                 whileHover={{ scale: 1.1 }}
-                                className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
+                                className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                  isPaid 
+                                    ? 'bg-green-100 border-2 border-green-300' 
+                                    : 'bg-blue-100'
+                                }`}
                               >
-                                <span className="text-blue-600 font-semibold">
+                                <span className={`font-semibold ${
+                                  isPaid ? 'text-green-600' : 'text-blue-600'
+                                }`}>
                                   {member.name.charAt(0).toUpperCase()}
                                 </span>
                               </motion.div>
                               <div>
-                                <span className="font-medium">{member.name}</span>
-                                {member.isCreator && <Badge variant="secondary" className="ml-2 text-xs">Creator</Badge>}
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium">{member.name}</span>
+                                  {member.isCreator && <Badge variant="secondary" className="text-xs">Creator</Badge>}
+                                  {isPaid && (
+                                    <motion.div
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      transition={{ type: "spring", stiffness: 500 }}
+                                    >
+                                      <Badge className="bg-green-500 text-white text-xs">
+                                        <Check className="w-3 h-3 mr-1" />
+                                        Paid
+                                      </Badge>
+                                    </motion.div>
+                                  )}
+                                </div>
+                                {isPaid && (
+                                  <p className="text-xs text-green-600">Payment completed</p>
+                                )}
                               </div>
                             </div>
                             <div className="text-right">
                               <motion.span 
                                 key={memberCost}
-                                initial={{ scale: 1.1, color: "#3b82f6" }}
-                                animate={{ scale: 1, color: "#000" }}
+                                initial={{ scale: 1.1, color: isPaid ? "#16a34a" : "#3b82f6" }}
+                                animate={{ scale: 1, color: isPaid ? "#16a34a" : "#000" }}
                                 transition={{ type: "spring", stiffness: 300 }}
-                                className="font-semibold text-lg"
+                                className={`font-semibold text-lg ${
+                                  isPaid ? 'text-green-600' : ''
+                                }`}
                               >
                                 ${memberCost.toFixed(2)}
                               </motion.span>
+                              {isPaid && (
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.2 }}
+                                  className="text-xs text-green-600"
+                                >
+                                  ✓ Confirmed
+                                </motion.div>
+                              )}
                             </div>
                           </motion.div>
                         );
@@ -572,16 +639,16 @@ const Payment = () => {
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span>Subtotal ({cartItems.length} items)</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>My Share ({paymentMethod === 'splitwise' ? 'Split Equally' : 'Items Added'})</span>
+                        <span>${getMyShare().toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Tax (8%)</span>
-                        <span>${tax.toFixed(2)}</span>
+                        <span>Tax (8% on my share)</span>
+                        <span>${(getMyShare() * 0.08).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-gray-500 line-through">
-                        <span>Delivery Fee</span>
-                        <span>${originalDeliveryFee}</span>
+                        <span>My Delivery Fee</span>
+                        <span>${(originalDeliveryFee / teamMembers.length).toFixed(2)}</span>
                       </div>
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -593,21 +660,21 @@ const Payment = () => {
                           <Gift className="w-4 h-4 mr-1" />
                           CoCart Delivery Savings
                         </span>
-                        <span>-${originalDeliveryFee}</span>
+                        <span>-${(originalDeliveryFee / teamMembers.length).toFixed(2)}</span>
                       </motion.div>
                     </div>
                     
                     <hr />
                     
                     <motion.div 
-                      key={total}
+                      key={getMyTotalWithTax()}
                       initial={{ scale: 1.05 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 300 }}
                       className="flex justify-between text-lg font-semibold"
                     >
-                      <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>My Total</span>
+                      <span>${getMyTotalWithTax().toFixed(2)}</span>
                     </motion.div>
                     
                     <motion.div
@@ -621,10 +688,11 @@ const Payment = () => {
                         <span className="font-medium">CoCart Benefits</span>
                       </div>
                       <ul className="text-sm text-blue-700 space-y-1">
-                        <li>• Free delivery (saved ${originalDeliveryFee})</li>
+                        <li>• Free delivery (saved ${(originalDeliveryFee / teamMembers.length).toFixed(2)})</li>
                         <li>• Collaborative shopping</li>
                         <li>• Budget tracking</li>
                         <li>• Split payment options</li>
+                        <li>• {paidMembers.length} members already paid</li>
                       </ul>
                     </motion.div>
 
@@ -644,7 +712,7 @@ const Payment = () => {
                             Processing...
                           </div>
                         ) : (
-                          `Pay $${total.toFixed(2)}`
+                          `Pay My Share $${getMyTotalWithTax().toFixed(2)}`
                         )}
                       </Button>
                     </motion.div>

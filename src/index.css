@@ -103,3 +103,17 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Hide scrollbars but keep functionality */
+@layer utilities {
+  .scrollbar-hide {
+    /* Firefox */
+    scrollbar-width: none;
+    /* Safari and Chrome */
+    -ms-overflow-style: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
