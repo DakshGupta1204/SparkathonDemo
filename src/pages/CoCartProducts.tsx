@@ -1228,7 +1228,7 @@ const CoCartProducts = () => {
           processVoiceInput(consistentTranscript);
         }
       }, 300); // Type each word every 300ms
-    }, 20000); // 20 seconds of listening
+    },8000); // 8 seconds of listening
   };
 
   const processVoiceInput = async (transcript: string) => {
@@ -1371,10 +1371,7 @@ const CoCartProducts = () => {
     if (!isVoiceAgentOpen) {
       setIsVoiceAgentOpen(true);
       resetVoiceAgent();
-      await speak("Hi! I'm your voice shopping assistant. Tell me what items you need and I'll help you add them to your cart. What would you like to buy?");
-      setTimeout(() => {
-        startVoiceRecognition();
-      }, 1000);
+      await speak("Hi! I'm your voice shopping assistant. Tell me what items you need and I'll help you add them to your cart. Click 'Start Demo' when you're ready!");
     } else {
       setIsVoiceAgentOpen(false);
       speechSynthesis.cancel();
@@ -2251,10 +2248,9 @@ const CoCartProducts = () => {
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></span>
                   </div>
                   <div>
-                    <span className="font-semibold text-lg">Voice Shopping Assistant Demo</span>
+                    <span className="font-semibold text-lg">Voice Shopping Assistant</span>
                     <p className="text-xs text-blue-100 opacity-90">
-                      {voiceAgentStep === 'listening' && !isListening && 'Ready to demonstrate AI voice shopping...'}
-                      {isListening && 'Simulating voice recognition...'}
+                      {voiceAgentStep === 'listening' && !isListening && 'AI voice shopping...'}
                       {voiceAgentStep === 'processing' && 'AI processing your request...'}
                       {voiceAgentStep === 'ready' && 'Products found - ready to add to cart!'}
                     </p>
@@ -2317,7 +2313,7 @@ const CoCartProducts = () => {
                     {voiceAgentStep === 'listening' && !isListening && (
                       <div className="text-center">
                         <p className="text-blue-700 font-medium">🎤 Ready to listen</p>
-                        <p className="text-sm text-gray-600">Voice Shopping Assistant Demo</p>
+                        <p className="text-sm text-gray-600">Voice Shopping Assistant </p>
                         <p className="text-xs text-blue-500 mt-1">Click "Start Speaking" to see the AI in action!</p>
                       </div>
                     )}
@@ -2326,14 +2322,7 @@ const CoCartProducts = () => {
                       <div className="text-center">
                         <p className="text-red-600 font-medium"> Listening...</p>
                         <p className="text-sm text-gray-600">Speak clearly</p>
-                        <div className="mt-2 bg-gray-200 rounded-full h-2 w-48 mx-auto">
-                          <motion.div
-                            className="bg-red-500 h-2 rounded-full"
-                            initial={{ width: "0%" }}
-                            animate={{ width: "100%" }}
-                            transition={{ duration: 20, ease: "linear" }}
-                          />
-                        </div>
+                        
                       </div>
                     )}
 
