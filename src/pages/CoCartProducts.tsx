@@ -97,6 +97,8 @@ const CoCartProducts = () => {
   const [voiceAgentStep, setVoiceAgentStep] = useState<'listening' | 'processing' | 'ready'>('listening');
   const [detectedItems, setDetectedItems] = useState<string[]>([]);
   const [matchedProducts, setMatchedProducts] = useState<Product[]>([]);
+  const [typingTranscript, setTypingTranscript] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   
   const coCartCode = localStorage.getItem('coCartCode') || '';
   const coCartName = localStorage.getItem('coCartName') || 'Shared Cart';
@@ -1182,101 +1184,95 @@ const CoCartProducts = () => {
     }
   };
 
-  // Voice Agent Functions
+  // Voice Agent Functions - Simulated Frontend Experience
   const speak = (text: string) => {
     return new Promise<void>((resolve) => {
-      if ('speechSynthesis' in window) {
-        setIsSpeaking(true);
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
-        utterance.volume = 0.8;
-        
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          resolve();
-        };
-        
-        utterance.onerror = () => {
-          setIsSpeaking(false);
-          resolve();
-        };
-        
-        speechSynthesis.speak(utterance);
-      } else {
+      // Simulate speaking without actual speech synthesis
+      setIsSpeaking(true);
+      setTimeout(() => {
+        setIsSpeaking(false);
         resolve();
-      }
+      }, 2000); // Simulate 2 seconds of speaking
     });
   };
 
   const startVoiceRecognition = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
+    // Simulate voice recognition - 20 seconds listening animation
+    setIsListening(true);
+    setVoiceTranscript('');
+    setVoiceAgentStep('listening');
+    
+    // Consistent simulated transcript for demo
+    const consistentTranscript = "I need bananas, milk, and strawberries for breakfast";
+    
+    // After 20 seconds, simulate completion with typing effect
+    setTimeout(() => {
+      setIsListening(false);
       
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
+      // Simulate typing the transcript
+      setIsTyping(true);
+      let currentText = '';
+      const words = consistentTranscript.split(' ');
+      let wordIndex = 0;
       
-      setIsListening(true);
-      setVoiceTranscript('');
-      
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript.toLowerCase();
-        setVoiceTranscript(transcript);
-        setIsListening(false);
-        processVoiceInput(transcript);
-      };
-      
-      recognition.onerror = () => {
-        setIsListening(false);
-        speak("Sorry, I couldn't hear you clearly. Please try again.");
-      };
-      
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-      
-      recognition.start();
-    } else {
-      toast({
-        title: "Voice Recognition Not Supported",
-        description: "Your browser doesn't support voice recognition.",
-        duration: 3000,
-      });
-    }
+      const typingInterval = setInterval(() => {
+        if (wordIndex < words.length) {
+          currentText += (wordIndex > 0 ? ' ' : '') + words[wordIndex];
+          setTypingTranscript(currentText);
+          wordIndex++;
+        } else {
+          clearInterval(typingInterval);
+          setIsTyping(false);
+          setVoiceTranscript(consistentTranscript);
+          setTypingTranscript('');
+          processVoiceInput(consistentTranscript);
+        }
+      }, 300); // Type each word every 300ms
+    }, 20000); // 20 seconds of listening
   };
 
   const processVoiceInput = async (transcript: string) => {
     setVoiceAgentStep('processing');
     
-    // Parse shopping list
-    const items = extractItemsFromTranscript(transcript);
-    setDetectedItems(items);
-    
-    if (items.length > 0) {
-      const products = findMatchingProducts(items);
-      setMatchedProducts(products);
+    // Simulate 5 seconds of processing
+    setTimeout(async () => {
+      // Parse shopping list - simulate finding items
+      const items = extractItemsFromTranscript(transcript);
+      setDetectedItems(items);
       
-      if (products.length > 0) {
-        await speak(`I found ${products.length} items: ${products.map(p => p.name).join(', ')}. Would you like to add them to your cart?`);
-        setVoiceAgentStep('ready');
+      if (items.length > 0) {
+        const products = findMatchingProducts(items);
+        setMatchedProducts(products);
+        
+        if (products.length > 0) {
+          await speak(`I found ${products.length} items: ${products.map(p => p.name).join(', ')}. Would you like to add them to your cart?`);
+          setVoiceAgentStep('ready');
+        } else {
+          await speak("I couldn't find any matching products. Please try again with different items.");
+          setVoiceAgentStep('listening');
+        }
       } else {
-        await speak("I couldn't find any matching products. Please try again with different items.");
+        await speak("I didn't detect any items. Please try saying something like: I need apples, bananas, and bread.");
         setVoiceAgentStep('listening');
       }
-    } else {
-      await speak("I didn't detect any items. Please try saying something like: I need apples, bananas, and bread.");
-      setVoiceAgentStep('listening');
-    }
+    }, 5000); // 5 seconds processing delay
   };
 
   const extractItemsFromTranscript = (transcript: string): string[] => {
-    const commonItems = ['apple', 'banana', 'bread', 'milk', 'cheese', 'chicken', 'beef', 'rice', 'pasta', 'tomato', 'orange', 'strawberry', 'avocado', 'broccoli', 'butter', 'yogurt', 'salmon', 'croissant', 'cookies'];
+    // Enhanced list of detectable items that match our product catalog
+    const commonItems = [
+      'apple', 'banana', 'bread', 'milk', 'cheese', 'chicken', 'beef', 'rice', 'pasta', 
+      'tomato', 'orange', 'strawberry', 'strawberries', 'avocado', 'broccoli', 'butter', 
+      'yogurt', 'salmon', 'croissant', 'cookies', 'headphones', 'powerbank', 'power bank'
+    ];
+    
     const foundItems: string[] = [];
     
+    // Convert transcript to lowercase for matching
+    const lowerTranscript = transcript.toLowerCase();
+    
     commonItems.forEach(item => {
-      if (transcript.includes(item)) {
+      if (lowerTranscript.includes(item)) {
         foundItems.push(item);
       }
     });
@@ -1284,20 +1280,34 @@ const CoCartProducts = () => {
     // Handle plurals and variations
     const itemVariations: {[key: string]: string} = {
       'apples': 'apple',
-      'bananas': 'banana',
+      'bananas': 'banana', 
       'breads': 'bread',
       'tomatoes': 'tomato',
       'oranges': 'orange',
       'strawberries': 'strawberry',
       'avocados': 'avocado',
-      'croissants': 'croissant'
+      'croissants': 'croissant',
+      'cookies': 'cookie',
+      'headphone': 'headphones',
+      'power bank': 'powerbank'
     };
     
-    Object.entries(itemVariations).forEach(([plural, singular]) => {
-      if (transcript.includes(plural) && !foundItems.includes(singular)) {
-        foundItems.push(singular);
+    Object.entries(itemVariations).forEach(([variation, canonical]) => {
+      if (lowerTranscript.includes(variation) && !foundItems.includes(canonical)) {
+        foundItems.push(canonical);
       }
     });
+    
+    // If no specific items found but transcript contains shopping-related words, 
+    // simulate finding some common items
+    if (foundItems.length === 0 && 
+        (lowerTranscript.includes('need') || 
+         lowerTranscript.includes('want') || 
+         lowerTranscript.includes('buy') ||
+         lowerTranscript.includes('get'))) {
+      // Return some default items to demonstrate the functionality
+      return ['banana', 'milk', 'strawberry'];
+    }
     
     return foundItems;
   };
@@ -1351,6 +1361,10 @@ const CoCartProducts = () => {
     setDetectedItems([]);
     setMatchedProducts([]);
     setVoiceTranscript('');
+    setTypingTranscript('');
+    setIsTyping(false);
+    setIsListening(false);
+    setIsSpeaking(false);
   };
 
   const handleVoiceAgentToggle = async () => {
@@ -2237,11 +2251,12 @@ const CoCartProducts = () => {
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></span>
                   </div>
                   <div>
-                    <span className="font-semibold text-lg">Voice Shopping Assistant</span>
+                    <span className="font-semibold text-lg">Voice Shopping Assistant Demo</span>
                     <p className="text-xs text-blue-100 opacity-90">
-                      {voiceAgentStep === 'listening' && 'Tell me what you need...'}
-                      {voiceAgentStep === 'processing' && 'Processing your request...'}
-                      {voiceAgentStep === 'ready' && 'Ready to add items!'}
+                      {voiceAgentStep === 'listening' && !isListening && 'Ready to demonstrate AI voice shopping...'}
+                      {isListening && 'Simulating voice recognition...'}
+                      {voiceAgentStep === 'processing' && 'AI processing your request...'}
+                      {voiceAgentStep === 'ready' && 'Products found - ready to add to cart!'}
                     </p>
                   </div>
                 </div>
@@ -2302,14 +2317,55 @@ const CoCartProducts = () => {
                     {voiceAgentStep === 'listening' && !isListening && (
                       <div className="text-center">
                         <p className="text-blue-700 font-medium">🎤 Ready to listen</p>
-                        <p className="text-sm text-gray-600">Say something like: "I need apples, bananas, and bread"</p>
+                        <p className="text-sm text-gray-600">Voice Shopping Assistant Demo</p>
+                        <p className="text-xs text-blue-500 mt-1">Click "Start Speaking" to see the AI in action!</p>
                       </div>
                     )}
                     
                     {isListening && (
                       <div className="text-center">
-                        <p className="text-red-600 font-medium">🎤 Listening...</p>
+                        <p className="text-red-600 font-medium"> Listening...</p>
                         <p className="text-sm text-gray-600">Speak clearly</p>
+                        <div className="mt-2 bg-gray-200 rounded-full h-2 w-48 mx-auto">
+                          <motion.div
+                            className="bg-red-500 h-2 rounded-full"
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 20, ease: "linear" }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {voiceAgentStep === 'processing' && (
+                      <div className="text-center">
+                        <p className="text-blue-600 font-medium">🧠 Processing...</p>
+                        <p className="text-sm text-gray-600">Analyzing your request and finding products</p>
+                        <div className="mt-2 bg-gray-200 rounded-full h-2 w-48 mx-auto">
+                          <motion.div
+                            className="bg-blue-500 h-2 rounded-full"
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 5, ease: "linear" }}
+                          />
+                        </div>
+                        <div className="flex justify-center space-x-1 mt-3">
+                          <motion.div 
+                            className="w-2 h-2 bg-blue-500 rounded-full"
+                            animate={{ y: [0, -8, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
+                          />
+                          <motion.div 
+                            className="w-2 h-2 bg-blue-500 rounded-full"
+                            animate={{ y: [0, -8, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.1 }}
+                          />
+                          <motion.div 
+                            className="w-2 h-2 bg-blue-500 rounded-full"
+                            animate={{ y: [0, -8, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
+                          />
+                        </div>
                       </div>
                     )}
 
@@ -2325,8 +2381,29 @@ const CoCartProducts = () => {
                     )}
                   </div>
 
-                  {/* Transcript Display */}
-                  {voiceTranscript && (
+                  {/* Typing Transcript Display */}
+                  {(isTyping && typingTranscript) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3 bg-yellow-50 rounded-lg border border-yellow-200 shadow-sm"
+                    >
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium text-yellow-700">Transcribing:</span> "{typingTranscript}
+                        <motion.span
+                          animate={{ opacity: [1, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.8 }}
+                          className="text-yellow-600"
+                        >
+                          |
+                        </motion.span>
+                        "
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {/* Final Transcript Display */}
+                  {voiceTranscript && !isTyping && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -2402,23 +2479,20 @@ const CoCartProducts = () => {
                   {!isListening && !isSpeaking && voiceAgentStep === 'listening' && (
                     <Button
                       onClick={startVoiceRecognition}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full shadow-lg transform transition-all hover:scale-105"
                     >
                       <Mic className="w-4 h-4 mr-2" />
-                      Start Speaking
+                      Start
                     </Button>
                   )}
                   
                   {voiceAgentStep === 'ready' && (
                     <Button
                       onClick={() => {
-                        setVoiceAgentStep('listening');
-                        setDetectedItems([]);
-                        setMatchedProducts([]);
-                        setVoiceTranscript('');
+                        resetVoiceAgent();
                       }}
                       variant="outline"
-                      className="bg-white border-blue-300 text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-full"
+                      className="bg-white border-blue-300 text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-full shadow-lg transform transition-all hover:scale-105"
                     >
                       Try Again
                     </Button>
@@ -2694,7 +2768,7 @@ const CoCartProducts = () => {
               animate={{ opacity: 1, x: 0 }}
               className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-blue-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap"
             >
-              Voice Shopping Assistant
+              Voice Shopping Demo
               <div className="absolute top-1/2 left-full transform -translate-y-1/2 w-0 h-0 border-l-4 border-l-blue-900 border-t-4 border-b-4 border-t-transparent border-b-transparent"></div>
             </motion.div>
           )}
