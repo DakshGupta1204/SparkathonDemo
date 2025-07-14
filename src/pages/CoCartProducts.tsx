@@ -2135,10 +2135,10 @@ const CoCartProducts = () => {
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              className="mb-4 w-96 h-[400px] bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl shadow-2xl border border-purple-200 overflow-hidden backdrop-blur-sm"
+              className="mb-4 w-96 h-[400px] bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-2xl border border-blue-200 overflow-hidden backdrop-blur-sm"
             >
               {/* Voice Agent Header */}
-              <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 flex items-center justify-between border-b border-purple-400/20">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-900 text-white p-4 flex items-center justify-between border-b border-blue-400/20">
                 <div className="flex items-center space-x-3">
                   <div className="relative">
                     <Mic className="h-6 w-6" />
@@ -2146,7 +2146,7 @@ const CoCartProducts = () => {
                   </div>
                   <div>
                     <span className="font-semibold text-lg">Voice Shopping Assistant</span>
-                    <p className="text-xs text-purple-100 opacity-90">
+                    <p className="text-xs text-blue-100 opacity-90">
                       {voiceAgentStep === 'listening' && 'Tell me what you need...'}
                       {voiceAgentStep === 'processing' && 'Processing your request...'}
                       {voiceAgentStep === 'ready' && 'Ready to add items!'}
@@ -2167,7 +2167,7 @@ const CoCartProducts = () => {
               </div>
 
               {/* Voice Agent Content */}
-              <div className="flex-1 p-6 space-y-4 overflow-y-auto scrollbar-hide bg-gradient-to-b from-purple-50/50 to-white h-80">
+              <div className="flex-1 p-6 space-y-4 overflow-y-auto scrollbar-hide bg-gradient-to-b from-blue-50/50 to-white h-80">
                 {/* Status Display */}
                 <div className="text-center space-y-4">
                   {/* Microphone Animation */}
@@ -2178,7 +2178,7 @@ const CoCartProducts = () => {
                       className={`w-20 h-20 rounded-full flex items-center justify-center ${
                         isListening 
                           ? 'bg-red-500 shadow-lg shadow-red-500/50' 
-                          : 'bg-purple-500 shadow-lg shadow-purple-500/50'
+                          : 'bg-blue-600 shadow-lg shadow-blue-600/50'
                       }`}
                     >
                       {isListening ? (
@@ -2209,7 +2209,7 @@ const CoCartProducts = () => {
                   <div className="space-y-2">
                     {voiceAgentStep === 'listening' && !isListening && (
                       <div className="text-center">
-                        <p className="text-purple-700 font-medium">🎤 Ready to listen</p>
+                        <p className="text-blue-700 font-medium">🎤 Ready to listen</p>
                         <p className="text-sm text-gray-600">Say something like: "I need apples, bananas, and bread"</p>
                       </div>
                     )}
@@ -2223,11 +2223,11 @@ const CoCartProducts = () => {
 
                     {isSpeaking && (
                       <div className="text-center">
-                        <p className="text-purple-700 font-medium">🗣️ Speaking...</p>
+                        <p className="text-blue-700 font-medium">🗣️ Speaking...</p>
                         <div className="flex justify-center space-x-1 mt-2">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                         </div>
                       </div>
                     )}
@@ -2238,10 +2238,10 @@ const CoCartProducts = () => {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-3 bg-white rounded-lg border border-purple-200 shadow-sm"
+                      className="p-3 bg-white rounded-lg border border-blue-200 shadow-sm"
                     >
                       <p className="text-sm text-gray-700">
-                        <span className="font-medium text-purple-600">You said:</span> "{voiceTranscript}"
+                        <span className="font-medium text-blue-700">You said:</span> "{voiceTranscript}"
                       </p>
                     </motion.div>
                   )}
@@ -2251,14 +2251,14 @@ const CoCartProducts = () => {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-3 bg-purple-50 rounded-lg border border-purple-200 space-y-3"
+                      className="p-3 bg-blue-50 rounded-lg border border-blue-200 space-y-3"
                     >
-                      <p className="text-sm font-medium text-purple-700 mb-2">Found Items:</p>
+                      <p className="text-sm font-medium text-blue-700 mb-2">Found Items:</p>
                       <div className="space-y-2 max-h-32 overflow-y-auto">
                         {matchedProducts.map((product) => (
                           <div 
                             key={product.id}
-                            className="flex items-center justify-between p-2 bg-white rounded border border-purple-100"
+                            className="flex items-center justify-between p-2 bg-white rounded border border-blue-100"
                           >
                             <div className="flex items-center space-x-2">
                               <img 
@@ -2271,13 +2271,13 @@ const CoCartProducts = () => {
                                 <p className="text-xs text-gray-500">{product.brand}</p>
                               </div>
                             </div>
-                            <span className="text-sm font-medium text-purple-600">${product.price.toFixed(2)}</span>
+                            <span className="text-sm font-medium text-blue-600">${product.price.toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
                       <Button
                         onClick={addAllItemsToCart}
-                        className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                       >
                         Add All to Cart (${matchedProducts.reduce((sum, p) => sum + p.price, 0).toFixed(2)})
                       </Button>
@@ -2288,14 +2288,14 @@ const CoCartProducts = () => {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-3 bg-purple-50 rounded-lg border border-purple-200"
+                      className="p-3 bg-blue-50 rounded-lg border border-blue-200"
                     >
-                      <p className="text-sm font-medium text-purple-700 mb-2">Detected Items:</p>
+                      <p className="text-sm font-medium text-blue-700 mb-2">Detected Items:</p>
                       <div className="flex flex-wrap gap-2">
                         {detectedItems.map((item) => (
                           <span 
                             key={item}
-                            className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700"
+                            className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700"
                           >
                             {item}
                           </span>
@@ -2310,7 +2310,7 @@ const CoCartProducts = () => {
                   {!isListening && !isSpeaking && voiceAgentStep === 'listening' && (
                     <Button
                       onClick={startVoiceRecognition}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full"
                     >
                       <Mic className="w-4 h-4 mr-2" />
                       Start Speaking
@@ -2326,7 +2326,7 @@ const CoCartProducts = () => {
                         setVoiceTranscript('');
                       }}
                       variant="outline"
-                      className="bg-white border-purple-300 text-purple-600 hover:bg-purple-50 px-6 py-2 rounded-full"
+                      className="bg-white border-blue-300 text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-full"
                     >
                       Try Again
                     </Button>
@@ -2345,7 +2345,7 @@ const CoCartProducts = () => {
               className="mb-4 w-96 h-[500px] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden backdrop-blur-sm bg-white/95"
             >
               {/* Chat Header */}
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex items-center justify-between border-b border-blue-400/20">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-900 text-white p-4 flex items-center justify-between border-b border-blue-400/20">
                 <div className="flex items-center space-x-3">
                   <div className="relative">
                     <MessageCircle className="h-6 w-6" />
@@ -2562,7 +2562,7 @@ const CoCartProducts = () => {
         >
           <motion.button
             onClick={handleVoiceAgentToggle}
-            className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 border-4 border-white/20 backdrop-blur-sm"
+            className="bg-gradient-to-r from-blue-600 to-blue-900 text-white p-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 border-4 border-white/20 backdrop-blur-sm"
             animate={isVoiceAgentOpen ? { scale: 0.9 } : { scale: 1 }}
           >
             <Mic className="h-6 w-6" />
@@ -2591,7 +2591,7 @@ const CoCartProducts = () => {
             
             {/* Pulse animation for activity */}
             {(isListening || isSpeaking) && (
-              <span className="absolute inset-0 rounded-full bg-purple-400 opacity-75 animate-ping"></span>
+              <span className="absolute inset-0 rounded-full bg-blue-400 opacity-75 animate-ping"></span>
             )}
           </motion.button>
           
@@ -2600,10 +2600,10 @@ const CoCartProducts = () => {
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-purple-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap"
+              className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-blue-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap"
             >
               Voice Shopping Assistant
-              <div className="absolute top-1/2 left-full transform -translate-y-1/2 w-0 h-0 border-l-4 border-l-purple-900 border-t-4 border-b-4 border-t-transparent border-b-transparent"></div>
+              <div className="absolute top-1/2 left-full transform -translate-y-1/2 w-0 h-0 border-l-4 border-l-blue-900 border-t-4 border-b-4 border-t-transparent border-b-transparent"></div>
             </motion.div>
           )}
         </motion.div>
@@ -2616,7 +2616,7 @@ const CoCartProducts = () => {
         >
           <motion.button
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 border-4 border-white/20 backdrop-blur-sm"
+            className="bg-gradient-to-r from-blue-600 to-blue-900 text-white p-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 border-4 border-white/20 backdrop-blur-sm"
             animate={isChatOpen ? { scale: 0.9 } : { scale: 1 }}
           >
             <MessageCircle className="h-6 w-6" />
