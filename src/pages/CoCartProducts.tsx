@@ -25,6 +25,8 @@ interface TeamMember {
   approvedCart: boolean;
   lastActivity?: string;
   isActive?: boolean;
+  isOnline?: boolean;
+  lastSeen?: string;
 }
 
 interface Product {
@@ -73,6 +75,7 @@ const CoCartProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [cartItems, setCartItems] = useState<{[key: string]: number}>({});
+  const [itemAddedBy, setItemAddedBy] = useState<{[key: string]: string}>({});
   const [newMemberBudget, setNewMemberBudget] = useState('');
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
@@ -109,7 +112,9 @@ const CoCartProducts = () => {
       spent: 0,
       isCreator: isCreator,
       approvedCart: false,
-      isActive: true
+      isActive: true,
+      isOnline: true,
+      lastSeen: 'now'
     },
     {
       id: '2',
@@ -120,7 +125,9 @@ const CoCartProducts = () => {
       isCreator: false,
       approvedCart: true, // Already approved before user
       lastActivity: 'Added Fresh Strawberries',
-      isActive: true
+      isActive: true,
+      isOnline: true,
+      lastSeen: '2 min ago'
     },
     {
       id: '3',
@@ -131,7 +138,9 @@ const CoCartProducts = () => {
       isCreator: false,
       approvedCart: false,
       lastActivity: 'Updated budget',
-      isActive: Math.random() > 0.3
+      isActive: Math.random() > 0.3,
+      isOnline: Math.random() > 0.4,
+      lastSeen: '5 min ago'
     },
     {
       id: '4',
@@ -142,7 +151,9 @@ const CoCartProducts = () => {
       isCreator: false,
       approvedCart: false,
       lastActivity: 'Viewing products',
-      isActive: Math.random() > 0.3
+      isActive: Math.random() > 0.3,
+      isOnline: Math.random() > 0.5,
+      lastSeen: '15 min ago'
     }
   ]);
 
@@ -210,6 +221,26 @@ const CoCartProducts = () => {
     },
     {
       id: '7',
+      name: 'Sony WH-CH720N Headphones',
+      price: 20.00,
+      image: '/sonyheadphones.jpg',
+      category: 'electronics',
+      brand: 'Sony',
+      rating: 4.4,
+      inStock: true
+    },
+    {
+      id: '8',
+      name: '6000mAh Portable Power Bank',
+      price: 10.00,
+      image: '/powerbank.jpg',
+      category: 'electronics',
+      brand: 'Walmart',
+      rating: 4.2,
+      inStock: true
+    },
+    {
+      id: '25',
       name: 'Fresh Avocados',
       price: 1.99,
       image: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&h=400&fit=crop',
@@ -219,7 +250,7 @@ const CoCartProducts = () => {
       inStock: true
     },
     {
-      id: '8',
+      id: '26',
       name: 'Brown Rice',
       price: 3.99,
       image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop',
@@ -396,8 +427,55 @@ const CoCartProducts = () => {
     { value: 'dairy', label: 'Dairy' },
     { value: 'meat', label: 'Meat & Seafood' },
     { value: 'bakery', label: 'Bakery' },
-    { value: 'pantry', label: 'Pantry' }
+    { value: 'pantry', label: 'Pantry' },
+    { value: 'electronics', label: 'Electronics' }
   ];
+
+  // Load cart items from localStorage when component mounts
+  useEffect(() => {
+    const savedCartItems = localStorage.getItem('coCartItems');
+    
+    if (savedCartItems) {
+      try {
+        const parsedItems = JSON.parse(savedCartItems);
+        setCartItems(parsedItems);
+        
+        // Set initial addedBy information - simulate collaborative cart
+        const initialAddedBy: {[key: string]: string} = {};
+        const teamMemberNames = ['You', 'Deepanshi', 'Anshumaan', 'Anshuman'];
+        Object.keys(parsedItems).forEach((productId, index) => {
+          // Assign items to different team members for realistic CoCart simulation
+          initialAddedBy[productId] = teamMemberNames[index % teamMemberNames.length];
+        });
+        setItemAddedBy(initialAddedBy);
+        
+        // Calculate user's spent amount based on loaded items
+        const userSpent = Object.entries(parsedItems).reduce((total, [productId, quantity]) => {
+          const product = products.find(p => p.id === productId);
+          return total + (product ? product.price * (quantity as number) : 0);
+        }, 0);
+        
+        // Update user's spent amount in team members
+        setTeamMembers(prev => prev.map(member => 
+          member.name === 'You' 
+            ? { ...member, spent: userSpent }
+            : member
+        ));
+        
+        // Don't clear localStorage immediately - keep it for checkout
+        // localStorage.removeItem('coCartItems');
+        // localStorage.removeItem('coCartProductDetails');
+        
+        toast({
+          title: "Items loaded!",
+          description: `${Object.keys(parsedItems).length} items loaded from your cart - $${userSpent.toFixed(2)} spent`,
+          duration: 3000,
+        });
+      } catch (error) {
+        console.error('Error loading cart items:', error);
+      }
+    }
+  }, [toast]);
 
   // Initialize chat messages with predefined conversations
   useEffect(() => {
@@ -768,6 +846,35 @@ const CoCartProducts = () => {
     }, 4000);
   };
 
+  const handleCheckout = () => {
+    // Save the current cart state to localStorage before navigating to payment
+    localStorage.setItem('coCartItems', JSON.stringify(cartItems));
+    
+    // Also update the product details with current cart items and addedBy information
+    const currentCartProducts = Object.entries(cartItems)
+      .filter(([_, quantity]) => quantity > 0)
+      .map(([productId, _]) => {
+        const product = products.find(p => p.id === productId);
+        return product ? {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          brand: product.brand,
+          category: product.category,
+          inStock: product.inStock,
+          rating: product.rating,
+          addedBy: itemAddedBy[productId] || 'You' // Use tracked addedBy info
+        } : null;
+      })
+      .filter(Boolean);
+    
+    localStorage.setItem('coCartProductDetails', JSON.stringify(currentCartProducts));
+    
+    // Navigate to payment
+    navigate('/payment');
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.brand.toLowerCase().includes(searchTerm.toLowerCase());
@@ -782,6 +889,12 @@ const CoCartProducts = () => {
     setCartItems(prev => ({
       ...prev,
       [productId]: (prev[productId] || 0) + 1
+    }));
+
+    // Track that this item was added by current user
+    setItemAddedBy(prev => ({
+      ...prev,
+      [productId]: 'You'
     }));
 
     // Update current user's spent amount
@@ -814,10 +927,21 @@ const CoCartProducts = () => {
     const product = products.find(p => p.id === productId);
     if (!product || !cartItems[productId]) return;
 
+    const newQuantity = Math.max((cartItems[productId] || 0) - 1, 0);
+    
     setCartItems(prev => ({
       ...prev,
-      [productId]: Math.max((prev[productId] || 0) - 1, 0)
+      [productId]: newQuantity
     }));
+
+    // If quantity reaches 0, remove from addedBy tracking
+    if (newQuantity === 0) {
+      setItemAddedBy(prev => {
+        const updated = { ...prev };
+        delete updated[productId];
+        return updated;
+      });
+    }
 
     // Update current user's spent amount
     if (cartItems[productId] > 0) {
@@ -1427,9 +1551,93 @@ const CoCartProducts = () => {
         </div>
 
         <div className="grid lg:grid-cols-12 gap-6">
-          {/* Left Section - Team Members */}
+          {/* Left Section - Cart Summary & Team Members */}
           <div className="lg:col-span-4">
             <div className="sticky top-6 space-y-4 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide">
+              {/* Cart Summary */}
+              <Card className="backdrop-blur-sm bg-white/95 border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setIsCartPopoutOpen(true)}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
+                      Cart Summary
+                    </div>
+                    <motion.div
+                      key={Object.values(cartItems).reduce((sum, qty) => sum + qty, 0)}
+                      initial={{ scale: 1.2 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500 }}
+                    >
+                      <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                        {Object.values(cartItems).reduce((sum, qty) => sum + qty, 0)} items
+                      </Badge>
+                    </motion.div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="relative min-h-[200px]">
+                  {/* Scrollable Cart Items */}
+                  <div className="space-y-2 max-h-[250px] overflow-y-auto scrollbar-hide pb-20">
+                    <AnimatePresence>
+                      {Object.entries(cartItems).filter(([_, quantity]) => quantity > 0).slice(0, 3).map(([productId, quantity]) => {
+                        const product = products.find(p => p.id === productId);
+                        if (!product) return null;
+                        return (
+                          <motion.div
+                            key={productId}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <img 
+                              src={product.image} 
+                              alt={product.name}
+                              className="w-10 h-10 rounded-md object-cover"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
+                              <p className="text-xs text-gray-500">${product.price} × {quantity}</p>
+                            </div>
+                            <div className="text-sm font-semibold text-blue-600">
+                              ${(product.price * quantity).toFixed(2)}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                    
+                    {Object.entries(cartItems).filter(([_, quantity]) => quantity > 0).length > 3 && (
+                      <div className="text-center text-sm text-gray-500 py-2">
+                        +{Object.entries(cartItems).filter(([_, quantity]) => quantity > 0).length - 3} more items
+                      </div>
+                    )}
+                    
+                    {Object.entries(cartItems).filter(([_, quantity]) => quantity > 0).length === 0 && (
+                      <div className="text-center text-gray-400 py-8">
+                        <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>No items in cart yet</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Total at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent p-4">
+                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-700">Total:</span>
+                        <span className="text-lg font-bold text-blue-600">
+                          ${getTotalCartValue().toFixed(2)}
+                        </span>
+                      </div>
+                      {getTotalCartValue() > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">Click to view full cart</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Team Members */}
               <Card className="backdrop-blur-sm bg-white/95 border-0 shadow-lg">
                 <CardHeader className="pb-3">
@@ -1467,201 +1675,85 @@ const CoCartProducts = () => {
                     )}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <AnimatePresence>
-                    {teamMembers.map((member, index) => {
-                      const budgetColor = getBudgetStatusColor(member);
-                      const colorClasses = getBudgetColorClasses(budgetColor);
-                      
-                      return (
-                        <motion.div 
-                          key={member.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className={`p-4 rounded-xl border ${colorClasses.bg} ${colorClasses.border} hover:shadow-md transition-all duration-200`}
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <div className="relative">
-                                <Avatar className="w-10 h-10 ring-2 ring-white shadow-sm">
-                                  <AvatarFallback className={`${colorClasses.bg} ${colorClasses.text} font-semibold`}>
-                                    {member.name.charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                {member.isActive && (
-                                  <motion.div
-                                    animate={{ scale: [1, 1.2, 1] }}
-                                    transition={{ repeat: Infinity, duration: 2 }}
-                                    className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm"
-                                  />
-                                )}
-                              </div>
-                              <div>
-                                <div className="flex items-center space-x-2">
-                                  <span className="font-semibold text-gray-900">{member.name}</span>
-                                  {member.isCreator && <Badge variant="secondary" className="text-xs px-2 py-0.5">Creator</Badge>}
-                                  {member.approvedCart && (
-                                    <motion.div
-                                      initial={{ scale: 0 }}
-                                      animate={{ scale: 1 }}
-                                      transition={{ type: "spring", stiffness: 500 }}
-                                    >
-                                      <Badge className="bg-green-100 text-green-700 border-green-200 text-xs px-2 py-0.5">
-                                        <ThumbsUp className="w-2 h-2 mr-1" />
-                                        Approved
-                                      </Badge>
-                                    </motion.div>
-                                  )}
+                <CardContent className="relative min-h-[400px]">
+                  {/* Team Members List */}
+                  <div className="space-y-3 max-h-[450px] overflow-y-auto scrollbar-hide">
+                    <AnimatePresence>
+                      {teamMembers.map((member, index) => {
+                        const budgetColor = getBudgetStatusColor(member);
+                        const colorClasses = getBudgetColorClasses(budgetColor);
+                        
+                        return (
+                          <motion.div 
+                            key={member.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ delay: index * 0.1 }}
+                            className={`p-3 rounded-lg border ${colorClasses.bg} ${colorClasses.border} hover:shadow-md transition-all`}
+                          >
+                            <div className="flex items-center space-x-3 mb-2">
+                              <Avatar className="w-10 h-10">
+                                <AvatarFallback className={`${colorClasses.bg} ${colorClasses.text} text-sm font-semibold`}>
+                                  {member.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-semibold text-sm text-gray-900">{member.name}</span>
+                                  <div className="flex items-center space-x-1">
+                                    {member.isCreator && (
+                                      <Badge variant="secondary" className="text-xs">Creator</Badge>
+                                    )}
+                                    {member.approvedCart && (
+                                      <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ type: "spring", stiffness: 500 }}
+                                      >
+                                        <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+                                          <CheckCircle className="w-3 h-3 mr-1" />
+                                          Approved
+                                        </Badge>
+                                      </motion.div>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className={`text-sm font-medium ${colorClasses.text}`}>
-                                  ${member.spent.toFixed(2)} / ${member.budget.toFixed(2)}
+                                <div className="text-xs text-gray-500">
+                                  {member.isOnline ? 'Online' : `Last seen ${member.lastSeen}`}
                                 </div>
-                                {member.lastActivity && (
-                                  <motion.div 
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="text-xs text-blue-600 mt-1"
-                                  >
-                                    {member.lastActivity}
-                                  </motion.div>
-                                )}
                               </div>
                             </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className={`text-sm font-medium ${colorClasses.text}`}>
+                            
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className={`text-xs font-medium ${colorClasses.text}`}>
+                                  Budget: ${member.spent.toFixed(2)} / ${member.budget.toFixed(2)}
+                                </span>
+                                <span className={`text-xs ${colorClasses.text}`}>
+                                  {getBudgetProgress(member).toFixed(0)}%
+                                </span>
+                              </div>
+                              <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${Math.min(getBudgetProgress(member), 100)}%` }}
+                                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                                  className={`h-full ${colorClasses.progress} rounded-full`}
+                                />
+                              </div>
+                              <div className={`text-xs ${colorClasses.text}`}>
                                 {member.spent > member.budget 
                                   ? `$${(member.spent - member.budget).toFixed(2)} over budget`
                                   : `$${(member.budget - member.spent).toFixed(2)} remaining`
                                 }
-                              </span>
-                              <span className={`text-xs ${colorClasses.text}`}>
-                                {Math.round(getBudgetProgress(member))}%
-                              </span>
-                            </div>
-                            <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(getBudgetProgress(member), 100)}%` }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                                className={`h-full ${colorClasses.progress} rounded-full`}
-                              />
-                              {getBudgetProgress(member) > 100 && (
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${getBudgetProgress(member) - 100}%` }}
-                                  transition={{ duration: 0.5, delay: index * 0.1 + 0.2 }}
-                                  className="h-full bg-red-600 rounded-full absolute top-0"
-                                  style={{ left: '100%' }}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </CardContent>
-              </Card>
-
-              {/* Cart Summary */}
-              <Card className="backdrop-blur-sm bg-white/95 border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setIsCartPopoutOpen(true)}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
-                      Cart Summary
-                    </div>
-                    <motion.div
-                      key={Object.values(cartItems).reduce((sum, qty) => sum + qty, 0)}
-                      initial={{ scale: 1.2 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500 }}
-                    >
-                      <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
-                        {Object.values(cartItems).reduce((sum, qty) => sum + qty, 0)} items
-                      </Badge>
-                    </motion.div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="relative min-h-[200px]">
-                  {/* Scrollable Cart Items */}
-                  <div className="space-y-2 max-h-[250px] overflow-y-auto scrollbar-hide pb-20">
-                    <AnimatePresence>
-                      {Object.entries(cartItems).filter(([_, quantity]) => quantity > 0).slice(0, 3).map(([productId, quantity]) => {
-                        const product = products.find(p => p.id === productId);
-                        if (!product) return null;
-                        return (
-                          <motion.div 
-                            key={productId}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            whileHover={{ scale: 1.02 }}
-                            className="flex justify-between text-sm items-center p-3 bg-gray-50/80 hover:bg-gray-100/80 rounded-lg border border-gray-200/50 hover:border-blue-200 transition-all shadow-sm"
-                          >
-                            <div className="flex items-center space-x-3">
-                              <img src={product.image} alt={product.name} className="w-10 h-10 rounded-lg object-cover shadow-sm" />
-                              <div>
-                                <span className="font-medium text-gray-900">{product.name}</span>
-                                <p className="text-xs text-gray-500">Qty: {quantity}</p>
                               </div>
                             </div>
-                            <span className="font-semibold text-blue-600">${(product.price * quantity).toFixed(2)}</span>
                           </motion.div>
                         );
                       })}
                     </AnimatePresence>
-                    
-                    {Object.values(cartItems).every(q => q === 0) && (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-12"
-                      >
-                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                          <ShoppingCart className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <p className="text-gray-500 text-sm font-medium">No items in cart yet</p>
-                        <p className="text-xs text-gray-400 mt-1">Start adding products to see them here</p>
-                      </motion.div>
-                    )}
-                    
-                    {Object.entries(cartItems).filter(([_, quantity]) => quantity > 0).length > 3 && (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-2 text-xs text-gray-500 border-t border-gray-200"
-                      >
-                        +{Object.entries(cartItems).filter(([_, quantity]) => quantity > 0).length - 3} more items... Click to view all
-                      </motion.div>
-                    )}
                   </div>
-                  
-                  {/* Fixed Total Price at Bottom */}
-                  {Object.values(cartItems).some(q => q > 0) && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-gray-200"
-                    >
-                      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                        <span className="font-semibold text-gray-900">Total:</span>
-                        <motion.span 
-                          key={getTotalCartValue()}
-                          initial={{ scale: 1.1, color: "#3b82f6" }}
-                          animate={{ scale: 1, color: "#3b82f6" }}
-                          transition={{ type: "spring", stiffness: 500 }}
-                          className="text-xl font-bold text-blue-600"
-                        >
-                          ${getTotalCartValue().toFixed(2)}
-                        </motion.span>
-                      </div>
-                    </motion.div>
-                  )}
                 </CardContent>
               </Card>
 
@@ -1717,7 +1809,7 @@ const CoCartProducts = () => {
                           >
                             <Button 
                               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-md"
-                              onClick={() => navigate('/payment')}
+                              onClick={handleCheckout}
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
                               Proceed to Checkout

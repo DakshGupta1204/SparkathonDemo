@@ -1,11 +1,43 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ShoppingCart, Menu, User, MapPin, Heart, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
-  const [cartCount] = useState(3);
+  const [cartCount, setCartCount] = useState(0);
+  const [cartTotal, setCartTotal] = useState(0);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const updateCartInfo = () => {
+      const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+      const totalItems = cartItems.reduce((total: number, item: any) => total + item.quantity, 0);
+      const totalPrice = cartItems.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
+      
+      setCartCount(totalItems);
+      setCartTotal(totalPrice);
+    };
+
+    // Update cart info on component mount
+    updateCartInfo();
+
+    // Listen for storage changes (when items are added from other components)
+    const handleStorageChange = () => {
+      updateCartInfo();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom cart update events
+    window.addEventListener('cartUpdated', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('cartUpdated', handleStorageChange);
+    };
+  }, []);
 
   return (
     <header className="bg-blue-700 text-white">
@@ -72,14 +104,18 @@ const Header = () => {
               </div>
             </Button>
 
-            <Button variant="ghost" className="text-white hover:bg-blue-700 relative flex flex-col items-center">
+            <Button 
+              variant="ghost" 
+              className="text-white hover:bg-blue-700 relative flex flex-col items-center"
+              onClick={() => navigate('/cart')}
+            >
               <ShoppingCart className="w-12 h-12" />
               {cartCount > 0 && (
                 <Badge className="absolute -top-3 right-5 bg-yellow-400 text-black w-3 h-5 flex items-center justify-center text-xs">
                   {cartCount}
                 </Badge>
               )}
-              <span className="ml-2 hidden md:inline">${89.55}</span>
+              <span className="ml-2 hidden md:inline">${cartTotal.toFixed(2)}</span>
             </Button>
           </div>
         </div>

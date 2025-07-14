@@ -92,7 +92,85 @@ const Payment = () => {
     }
   ]);
 
-  const [cartItems] = useState<CartItem[]>([
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // Load cart items from localStorage when component mounts
+  useEffect(() => {
+    const loadCartItems = () => {
+      // First try to load from coCartItems (CoCart scenario)
+      const coCartItems = localStorage.getItem('coCartItems');
+      const coCartProductDetails = localStorage.getItem('coCartProductDetails');
+      
+      if (coCartItems && coCartProductDetails) {
+        try {
+          const cartQuantities = JSON.parse(coCartItems);
+          const productDetails = JSON.parse(coCartProductDetails);
+          
+          const items: CartItem[] = productDetails
+            .filter((product: any) => cartQuantities[product.id] > 0)
+            .map((product: any) => ({
+              id: product.id,
+              name: product.name,
+              price: product.price,
+              quantity: cartQuantities[product.id],
+              image: product.image,
+              addedBy: product.addedBy || 'You' // Use stored addedBy info or default to 'You'
+            }));
+          
+          setCartItems(items);
+          return;
+        } catch (error) {
+          console.error('Error loading CoCart items:', error);
+        }
+      }
+      
+      // Fallback to regular cart items
+      const regularCartItems = localStorage.getItem('cartItems');
+      if (regularCartItems) {
+        try {
+          const items = JSON.parse(regularCartItems);
+          const formattedItems: CartItem[] = items.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+            addedBy: item.addedBy || 'You'
+          }));
+          
+          setCartItems(formattedItems);
+          return;
+        } catch (error) {
+          console.error('Error loading regular cart items:', error);
+        }
+      }
+      
+      // Fallback to mock data if no items found
+      setCartItems([
+        {
+          id: '1',
+          name: 'Organic Bananas',
+          price: 2.99,
+          quantity: 2,
+          image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
+          addedBy: 'You'
+        },
+        {
+          id: '3',
+          name: 'Fresh Milk 2%',
+          price: 4.29,
+          quantity: 3,
+          image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop',
+          addedBy: 'Deepanshi'
+        }
+      ]);
+    };
+
+    loadCartItems();
+  }, []);
+
+  // Original mock data as fallback (keeping structure but making it dynamic)
+  const [fallbackCartItems] = useState<CartItem[]>([
     {
       id: '1',
       name: 'Organic Bananas',
@@ -217,9 +295,17 @@ const Payment = () => {
       setIsProcessing(false);
       setShowSuccess(true);
       
+      // Clear cart data after successful payment
+      localStorage.removeItem('cartItems');
+      localStorage.removeItem('coCartItems');
+      localStorage.removeItem('coCartProductDetails');
+      localStorage.removeItem('coCartCode');
+      localStorage.removeItem('coCartName');
+      localStorage.removeItem('isCoCartCreator');
+      
       toast({
         title: "Payment Successful!",
-        description: `Your CoCart order has been processed successfully`,
+        description: `Your ${coCartCode ? 'CoCart' : 'cart'} order has been processed successfully`,
         duration: 4000,
       });
 
